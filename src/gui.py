@@ -1,19 +1,35 @@
-from PyQt5.QtCore import QUrl
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtWebEngineWidgets import QWebEngineView
-import sys
+import socket
+import threading
 
-app = QApplication(sys.argv)
+HOST = '127.0.0.1'  # Địa chỉ IP của máy chủ
+PORT = 9999         # Cổng mà server socket lắng nghe
 
-# Tạo một đối tượng QWebEngineView
-web_view = QWebEngineView()
+def handle_client(client_socket, client_address):
+    print(f"Đã kết nối từ {client_address}")
 
-# Hiển thị nội dung HTML trong QWebEngineView
-html_content = "<html><body><h1>Hello, World!</h1></body></html>"
-web_view.setHtml(html_content, QUrl('http://localhost/'))
+    # Nhận dữ liệu từ client
+    data = client_socket.recv(1024).decode()
+    received_array = data.split(',')
 
-# Hiển thị QWebEngineView
-web_view.show()
+    print("Mảng nhận được từ client:")
+    for i in received_array:
+        print(i)
 
-# Chạy ứng dụng
-sys.exit(app.exec_())
+    client_socket.close()
+
+def start_server():
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind((HOST, PORT))
+    server_socket.listen(1)
+
+    print(f"Server đang lắng nghe trên cổng {PORT}...")
+
+    while True:
+        client_socket, client_address = server_socket.accept()
+
+        # Tạo một thread mới để xử lý kết nối từ client
+        client_thread = threading.Thread(target=handle_client, args=(client_socket, client_address))
+        client_thread.start()
+
+if __name__ == "__main__":
+    start_server()
